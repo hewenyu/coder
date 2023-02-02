@@ -17,9 +17,9 @@ jobs:
       run: tar -cvf docker-go-1.19.tar ./docker/docker-go-1.19/
       
     - name: Release
-        uses: softprops/action-gh-release@v1
-        if: startsWith(github.ref, 'refs/tags/')
-        with:
-          files: |
-            docker-go-1.19.tar
+      uses: softprops/action-gh-release@v1
+      if: startsWith(github.ref, 'refs/tags/')
+      with:
+        files: |
+          docker-go-1.19.tar
       
