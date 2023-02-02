@@ -13,8 +13,11 @@ jobs:
     - name: Checkout source
       uses: actions/checkout@v2
       
-    - name: Tar the Release
+    - name: Tar the docker-go-1.19.tar Release
       run: tar -cvf docker-go-1.19.tar ./docker/docker-go-1.19/
+
+    - name: Tar the docker-go-1.18.tar Release
+      run: tar -cvf docker-go-1.18.tar ./docker/docker-go-1.18/
       
     - name: Release
       uses: softprops/action-gh-release@v0.1.15
@@ -22,4 +25,5 @@ jobs:
       with:
         files: |
           docker-go-1.19.tar
+          docker-go-1.18.tar
       
