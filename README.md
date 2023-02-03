@@ -24,7 +24,7 @@ coder template create
 Update the template:
 
 ```console
-coder template push docker-image-builds
+coder template push coder
 ```
 
 Optional: Update workspaces to the latest template version
