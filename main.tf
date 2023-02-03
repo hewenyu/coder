@@ -40,7 +40,7 @@ resource "coder_app" "code-server" {
   agent_id     = coder_agent.main.id
   slug         = "code-server"
   display_name = "code-server"
-  url          = "http://localhost:13337/?folder=/home/vscode"
+  url          = "http://localhost:13337/?folder=/home/coder"
   icon         = "/icon/code.svg"
   subdomain    = false
   share        = "owner"
@@ -125,7 +125,7 @@ resource "docker_container" "workspace" {
     ip   = "host-gateway"
   }
   volumes {
-    container_path = "/home/vscode/"
+    container_path = "/home/coder/"
     volume_name    = docker_volume.home_volume.name
     read_only      = false
   }
