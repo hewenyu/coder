@@ -31,8 +31,8 @@ resource "coder_agent" "main" {
     set -e
 
     # install and start code-server
-    sudo curl -fsSL https://code-server.dev/install.sh | sh -s -- --version 4.8.3
-    sudo code-server --auth none --port 13337 >/tmp/code-server.log 2>&1 &
+    curl -fsSL https://code-server.dev/install.sh | sh -s -- --version 4.8.3
+    code-server --auth none --port 13337 >/tmp/code-server.log 2>&1 &
   EOT
 }
 
