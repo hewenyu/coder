@@ -1,3 +1,4 @@
+
 terraform {
   required_providers {
     coder = {
@@ -6,13 +7,9 @@ terraform {
     }
     docker = {
       source  = "kreuzwerker/docker"
-      version = "~> 2.22"
+      version = "~> 2.20.2"
     }
   }
-}
-
-locals {
-  username = data.coder_workspace.me.owner
 }
 
 data "coder_provisioner" "me" {
@@ -37,35 +34,42 @@ resource "coder_agent" "main" {
     curl -fsSL https://code-server.dev/install.sh | sh -s -- --version 4.8.3
     code-server --auth none --port 13337 >/tmp/code-server.log 2>&1 &
   EOT
-
-  # These environment variables allow you to make Git commits right away after creating a
-  # workspace. Note that they take precedence over configuration defined in ~/.gitconfig!
-  # You can remove this block if you'd prefer to configure Git manually or using
-  # dotfiles. (see docs/dotfiles.md)
-  env = {
-    GIT_AUTHOR_NAME     = "${data.coder_workspace.me.owner}"
-    GIT_COMMITTER_NAME  = "${data.coder_workspace.me.owner}"
-    GIT_AUTHOR_EMAIL    = "${data.coder_workspace.me.owner_email}"
-    GIT_COMMITTER_EMAIL = "${data.coder_workspace.me.owner_email}"
-  }
 }
 
 resource "coder_app" "code-server" {
   agent_id     = coder_agent.main.id
   slug         = "code-server"
   display_name = "code-server"
-  url          = "http://localhost:13337/?folder=/home/${local.username}"
+  url          = "http://localhost:13337/?folder=/home/vscode"
   icon         = "/icon/code.svg"
   subdomain    = false
   share        = "owner"
 
   healthcheck {
     url       = "http://localhost:13337/healthz"
-    interval  = 5
-    threshold = 6
+    interval  = 3
+    threshold = 10
   }
+
 }
 
+variable "docker_image" {
+  description = "What Docker image would you like to use for your workspace?"
+  default     = "base"
+
+  # List of images available for the user to choose from.
+  # Delete this condition to give users free text input.
+  validation {
+    condition     = contains(["base", "golang1.19"], var.docker_image)
+    error_message = "Invalid Docker image!"
+  }
+
+  # Prevents admin errors when the image is not found
+  validation {
+    condition     = fileexists("images/${var.docker_image}.Dockerfile")
+    error_message = "Invalid Docker image. The file does not exist in the images directory."
+  }
+}
 
 resource "docker_volume" "home_volume" {
   name = "coder-${data.coder_workspace.me.id}-home"
@@ -94,24 +98,21 @@ resource "docker_volume" "home_volume" {
   }
 }
 
-
-resource "docker_image" "main" {
-  name = "coder-${data.coder_workspace.me.id}"
+resource "docker_image" "coder_image" {
+  name = "coder-base-${data.coder_workspace.me.owner}-${lower(data.coder_workspace.me.name)}"
   build {
-    path = "./build"
-    build_args = {
-      USERNAME = local.username
-      VARIANT= "1.19-bullseye"
-    }
+    path       = "./images/"
+    dockerfile = "${var.docker_image}.Dockerfile"
+    tag        = ["coder-${var.docker_image}:v0.1"]
   }
-  triggers = {
-    dir_sha1 = sha1(join("", [for f in fileset(path.module, "build/*") : filesha1(f)]))
-  }
+
+  # Keep alive for other workspaces to use upon deletion
+  keep_locally = true
 }
 
 resource "docker_container" "workspace" {
   count = data.coder_workspace.me.start_count
-  image = docker_image.main.name
+  image = docker_image.coder_image.latest
   # Uses lower() to avoid Docker restriction on container names.
   name = "coder-${data.coder_workspace.me.owner}-${lower(data.coder_workspace.me.name)}"
   # Hostname makes the shell more user friendly: coder@my-workspace:~$
@@ -124,7 +125,7 @@ resource "docker_container" "workspace" {
     ip   = "host-gateway"
   }
   volumes {
-    container_path = "/home/${local.username}"
+    container_path = "/home/vscode/"
     volume_name    = docker_volume.home_volume.name
     read_only      = false
   }
@@ -144,5 +145,15 @@ resource "docker_container" "workspace" {
   labels {
     label = "coder.workspace_name"
     value = data.coder_workspace.me.name
+  }
+}
+
+resource "coder_metadata" "container_info" {
+  count       = data.coder_workspace.me.start_count
+  resource_id = docker_container.workspace[0].id
+
+  item {
+    key   = "image"
+    value = var.docker_image
   }
 }
