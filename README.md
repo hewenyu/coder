@@ -9,12 +9,14 @@ icon: /icon/docker.png
 
 使用自定义镜像
 
+目前支持 java 17 , golang 19 ,rust
+
 ## Getting started
 
 First
 
 ```console
-git clone https://github.com/hewenyu/coder.git && coder
+git clone https://github.com/hewenyu/coder.git && cd coder
 coder template create
 ```
 
