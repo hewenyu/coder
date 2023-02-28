@@ -7,9 +7,7 @@ icon: /icon/docker.png
 
 # docker-image-builds
 
-使用自定义镜像
-
-目前支持 java 17 , golang 19 ,rust
+support  java 17 , golang 19 ,rust
 
 ## Getting started
 
