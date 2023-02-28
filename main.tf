@@ -60,7 +60,7 @@ variable "docker_image" {
   # List of images available for the user to choose from.
   # Delete this condition to give users free text input.
   validation {
-    condition     = contains(["rust", "golang1.19"], var.docker_image)
+    condition     = contains(["rust", "golang1.19", "java"], var.docker_image)
     error_message = "Invalid Docker image!"
   }
 
